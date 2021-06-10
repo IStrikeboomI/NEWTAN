@@ -9,6 +9,7 @@ const int WIDTH = 816;
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int nCmdShow) {
+    //Initilzing Gdi+
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
@@ -33,7 +34,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
 
     //Creates Window
     HWND hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_BORDER, screen.right / 2 - WIDTH / 2, screen.bottom / 2 - HEIGHT / 2, WIDTH, HEIGHT, nullptr, nullptr, wc.hInstance, nullptr);
-    
+    //Removes menu bar
     SetWindowLong(hwnd, GWL_STYLE, 0);
 
     ShowWindow(hwnd, SW_SHOW);
@@ -45,6 +46,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
     }
+    //Shutdown Gdi+
     Gdiplus::GdiplusShutdown(gdiplusToken);
     return 0;
 }
@@ -52,6 +54,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
     PAINTSTRUCT ps;
     HDC hdc;
+    //118 is the int for the image
     Gdiplus::Bitmap img(GetModuleHandle(NULL), MAKEINTRESOURCE(118));
    
     switch (msg) {
@@ -67,6 +70,7 @@ LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
         break;
     }
     case WM_KILLFOCUS: {
+        //When you click off it comes back to the front
         ShowWindow(hwnd, SW_SHOWMINIMIZED);
         ShowWindow(hwnd, SW_SHOWDEFAULT);
         SetForegroundWindow(hwnd);
