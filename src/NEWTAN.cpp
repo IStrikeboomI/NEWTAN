@@ -14,6 +14,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
     ULONG_PTR gdiplusToken;
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
+    //initizalie wc
     WNDCLASSW wc = { 0 };
     wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
     wc.hInstance = hinstance;
@@ -24,6 +25,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
     //Adds icon in corner (117 is icon)
     wc.hIcon = (HICON)LoadImageW(wc.hInstance, MAKEINTRESOURCEW(117), IMAGE_ICON, 10, 0, LR_DEFAULTSIZE | LR_SHARED);
 
+    //see if we can register if not then stop program
     if (!RegisterClassW(&wc)) {
         return -1;
     }
@@ -34,14 +36,14 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
 
     //Creates Window
     HWND hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_BORDER, screen.right / 2 - WIDTH / 2, screen.bottom / 2 - HEIGHT / 2, WIDTH, HEIGHT, nullptr, nullptr, wc.hInstance, nullptr);
+    
     //Removes menu bar
     SetWindowLong(hwnd, GWL_STYLE, 0);
-
     ShowWindow(hwnd, SW_SHOW);
 
-
+    //get message
     MSG msg = { nullptr };
-
+    //keep getting and handling messages until no more
     while (GetMessageW(&msg, nullptr, 0, 0)) {
         TranslateMessage(&msg);
         DispatchMessageW(&msg);
@@ -52,20 +54,25 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
 }
 
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
+    //initizle ps and hdc
     PAINTSTRUCT ps;
     HDC hdc;
     //118 is the int for the image
     Gdiplus::Bitmap img(GetModuleHandle(NULL), MAKEINTRESOURCE(118));
-   
+
     switch (msg) {
     case WM_DESTROY: {
         PostQuitMessage(0);
         break;
     }
     case WM_PAINT: {
+        //start paitning
         hdc = BeginPaint(hwnd, &ps);
+        //make graphics
         Gdiplus::Graphics graphics(hdc);
-        graphics.DrawImage(&img,0,0);
+        //draw the actual image
+        graphics.DrawImage(&img, 0, 0);
+        //stop painting
         EndPaint(hwnd, &ps);
         break;
     }
