@@ -61,10 +61,6 @@ LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
     Gdiplus::Bitmap img(GetModuleHandle(NULL), MAKEINTRESOURCE(118));
 
     switch (msg) {
-    case WM_DESTROY: {
-        PostQuitMessage(0);
-        break;
-    }
     case WM_PAINT: {
         //start paitning
         hdc = BeginPaint(hwnd, &ps);
