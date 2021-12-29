@@ -6,6 +6,8 @@
 const int HEIGHT = 612;
 const int WIDTH = 816;
 
+Gdiplus::Bitmap* img = nullptr;
+
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
 int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int nCmdShow) {
@@ -13,6 +15,8 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
     Gdiplus::GdiplusStartupInput gdiplusStartupInput;
     ULONG_PTR gdiplusToken;
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+
+    img = Gdiplus::Bitmap::FromResource(hinstance,MAKEINTRESOURCE(118));
 
     //initizalie wc
     WNDCLASSW wc = { 0 };
@@ -35,7 +39,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
     GetWindowRect(GetDesktopWindow(), &screen);
 
     //Creates Window
-    HWND hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_BORDER, screen.right / 2 - WIDTH / 2, screen.bottom / 2 - HEIGHT / 2, WIDTH, HEIGHT, nullptr, nullptr, wc.hInstance, nullptr);
+    HWND hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_POPUP, screen.right / 2 - WIDTH / 2, screen.bottom / 2 - HEIGHT / 2, WIDTH, HEIGHT, nullptr, nullptr, wc.hInstance, nullptr);
     
     //Removes menu bar
     SetWindowLong(hwnd, GWL_STYLE, 0);
@@ -54,34 +58,31 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
 }
 
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-    //initizle ps and hdc
-    PAINTSTRUCT ps;
-    HDC hdc;
-    //118 is the int for the image
-    Gdiplus::Bitmap img(GetModuleHandle(NULL), MAKEINTRESOURCE(118));
 
     switch (msg) {
-    case WM_CLOSE: {
-        return 0;
-    }
-    case WM_PAINT: {
-        //start paitning
-        hdc = BeginPaint(hwnd, &ps);
-        //make graphics
-        Gdiplus::Graphics graphics(hdc);
-        //draw the actual image
-        graphics.DrawImage(&img, 0, 0);
-        //stop painting
-        EndPaint(hwnd, &ps);
-        break;
-    }
-    case WM_KILLFOCUS: {
-        //When you click off it comes back to the front
-        ShowWindow(hwnd, SW_SHOWMINIMIZED);
-        ShowWindow(hwnd, SW_SHOWDEFAULT);
-        SetForegroundWindow(hwnd);
-        break;
-    }
-    default:return DefWindowProcW(hwnd, msg, wparam, lparam);
+        case WM_CLOSE: {
+            //return 0;
+        }
+        case WM_PAINT: {
+            //initizle ps and hdc
+            PAINTSTRUCT ps;
+            //start painting
+            HDC hdc = BeginPaint(hwnd, &ps);
+            //make graphics
+            Gdiplus::Graphics graphics(hdc);
+            //draw the actual image
+            graphics.DrawImage(img, 0, 0);
+            //stop painting
+            EndPaint(hwnd, &ps);
+            break;
+        }
+        case WM_KILLFOCUS: {
+            //When you click off it comes back to the front
+            //ShowWindow(hwnd, SW_SHOWMINIMIZED);
+            //ShowWindow(hwnd, SW_SHOWDEFAULT);
+            //SetForegroundWindow(hwnd);
+            break;
+        }
+        default:return DefWindowProcW(hwnd, msg, wparam, lparam);
     }
 }
