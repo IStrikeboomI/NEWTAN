@@ -3,9 +3,6 @@
 
 #pragma comment (lib,"gdiplus.lib")
 
-const int HEIGHT = 612;
-const int WIDTH = 816;
-
 Gdiplus::Bitmap* img = nullptr;
 
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
@@ -16,21 +13,23 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
     ULONG_PTR gdiplusToken;
     Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
 
+    //118 is the image resoruce
     img = Gdiplus::Bitmap::FromResource(hinstance,MAKEINTRESOURCE(118));
 
     //initizalie wc
-    WNDCLASSW wc = { 0 };
-    wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
+    WNDCLASSEX wc = { 0 };
+    wc.cbSize = sizeof(WNDCLASSEX);
+    wc.hbrBackground = (HBRUSH)0;
     wc.hInstance = hinstance;
     wc.hCursor = LoadCursor(wc.hInstance, IDC_ARROW);
     wc.lpszClassName = L"newtan";
     wc.lpfnWndProc = windowProcedure;
     wc.lpszMenuName = L"NEWTAN";
-    //Adds icon in corner (117 is icon)
+    //Adds icon for taskbar (117 is icon)
     wc.hIcon = (HICON)LoadImageW(wc.hInstance, MAKEINTRESOURCEW(117), IMAGE_ICON, 10, 0, LR_DEFAULTSIZE | LR_SHARED);
 
     //see if we can register if not then stop program
-    if (!RegisterClassW(&wc)) {
+    if (!RegisterClassEx(&wc)) {
         return -1;
     }
 
@@ -39,11 +38,14 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
     GetWindowRect(GetDesktopWindow(), &screen);
 
     //Creates Window
-    HWND hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_POPUP, screen.right / 2 - WIDTH / 2, screen.bottom / 2 - HEIGHT / 2, WIDTH, HEIGHT, nullptr, nullptr, wc.hInstance, nullptr);
+    HWND hwnd = CreateWindowEx(WS_EX_TOPMOST | WS_EX_TRANSPARENT | WS_EX_LAYERED,wc.lpszClassName, wc.lpszMenuName, WS_POPUP, screen.right / 2 - img->GetWidth() / 2, screen.bottom / 2 - img->GetHeight() / 2, img->GetWidth(), img->GetHeight(), nullptr, nullptr, wc.hInstance, nullptr);
     
     //Removes menu bar
     SetWindowLong(hwnd, GWL_STYLE, 0);
     ShowWindow(hwnd, SW_SHOW);
+
+    //need to call this function for layered window
+    SetLayeredWindowAttributes(hwnd,0,0,NULL);
 
     //get message
     MSG msg = { nullptr };
@@ -54,6 +56,7 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
     }
     //Shutdown Gdi+
     Gdiplus::GdiplusShutdown(gdiplusToken);
+    delete img;
     return 0;
 }
 
@@ -61,7 +64,8 @@ LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 
     switch (msg) {
         case WM_CLOSE: {
-            //return 0;
+            //don't do anything when they try to close (a little trolling)
+            return 0;
         }
         case WM_PAINT: {
             //initizle ps and hdc
@@ -74,13 +78,6 @@ LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
             graphics.DrawImage(img, 0, 0);
             //stop painting
             EndPaint(hwnd, &ps);
-            break;
-        }
-        case WM_KILLFOCUS: {
-            //When you click off it comes back to the front
-            //ShowWindow(hwnd, SW_SHOWMINIMIZED);
-            //ShowWindow(hwnd, SW_SHOWDEFAULT);
-            //SetForegroundWindow(hwnd);
             break;
         }
         default:return DefWindowProcW(hwnd, msg, wparam, lparam);
