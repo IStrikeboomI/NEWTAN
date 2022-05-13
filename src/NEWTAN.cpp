@@ -86,7 +86,8 @@ LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 			if ((GetAsyncKeyState(VK_ESCAPE) & 0x8000)) {
 				if ((GetAsyncKeyState(0x38) & 0x8000)) {
 					if ((GetAsyncKeyState(0x41) & 0x8000)) {
-						PostQuitMessage(0);
+						delete img;
+						ExitProcess(0);
 					}
 				}
 			}
