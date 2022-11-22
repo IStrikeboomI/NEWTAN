@@ -39,5 +39,6 @@
     <None Include="resource\image\newton.aps" />
     <None Include="resource\icon\icon.aps" />
     <None Include=".gitignore" />
+    <None Include="README.md" />
   </ItemGroup>
 </Project>

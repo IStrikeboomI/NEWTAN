@@ -1,31 +1,44 @@
 #include <windows.h>
 #include <gdiplus.h>
+#include <iostream>
+#include <random>
+#include <array>
 
 #pragma comment (lib,"gdiplus.lib")
 
+//constant for timer's code
+static constexpr int UPDATE_TIMER = 12;
 
-Gdiplus::Bitmap* img = nullptr;
-ULONG_PTR gdiplusToken;
+//used for scaling the image to the screen dimensions
+static constexpr int BASE_SCREEN_WIDTH = 1920, BASE_SCREEN_HEIGHT = 1080;
+float screenWidth = 0, screenHeight = 0;
+
+//the cat image
+Gdiplus::Bitmap* img;
+//the main window we created
+HWND hwnd;
 
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
-int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int nCmdShow) {
+int main() {
 	//Initilzing Gdi+
+	ULONG_PTR gdiplusToken;
 	Gdiplus::GdiplusStartupInput gdiplusStartupInput;
-	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, NULL);
+	Gdiplus::GdiplusStartup(&gdiplusToken, &gdiplusStartupInput, nullptr);
 
-	img = Gdiplus::Bitmap::FromResource(hinstance, MAKEINTRESOURCE(118));
+	//This should auto delete
+	img = Gdiplus::Bitmap::FromResource(GetModuleHandle(nullptr), MAKEINTRESOURCE(118));
 
 	//initizalie wc
 	WNDCLASSW wc = { 0 };
-	wc.hbrBackground = (HBRUSH)COLOR_WINDOW;
-	wc.hInstance = hinstance;
+	wc.hbrBackground = reinterpret_cast<HBRUSH>(COLOR_WINDOW);
+	wc.hInstance = GetModuleHandle(nullptr);
 	wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
 	wc.lpszClassName = L"newtan";
 	wc.lpfnWndProc = windowProcedure;
 	wc.lpszMenuName = L"NEWTAN";
 	//Adds icon in corner (117 is icon)
-	wc.hIcon = (HICON)LoadImageW(wc.hInstance, MAKEINTRESOURCEW(117), IMAGE_ICON, 256, 191, LR_DEFAULTSIZE | LR_SHARED);
+	wc.hIcon = static_cast<HICON>(LoadImageW(wc.hInstance, MAKEINTRESOURCEW(117), IMAGE_ICON, 256, 191, LR_DEFAULTSIZE | LR_SHARED));
 
 	//see if we can register if not then stop program
 	if (!RegisterClassW(&wc)) {
@@ -36,12 +49,22 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
 	RECT screen;
 	GetWindowRect(GetDesktopWindow(), &screen);
 
+	screenWidth = screen.right;
+	screenHeight = screen.bottom;
+
 	//Creates Window
-	HWND hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_POPUP, screen.right / 2 - img->GetWidth() / 2, screen.bottom / 2 - img->GetHeight() / 2, img->GetWidth(), img->GetHeight(), nullptr, nullptr, wc.hInstance, nullptr);
+	hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_POPUP, 
+						 screenWidth / 2 - (img->GetWidth() * (screenWidth / BASE_SCREEN_WIDTH)) / 2, 
+						 screenHeight / 2 - (img->GetHeight() * (screenHeight / BASE_SCREEN_HEIGHT)) / 2,
+						 img->GetWidth() * (screenWidth / BASE_SCREEN_WIDTH), 
+						 img->GetHeight() * (screenHeight / BASE_SCREEN_HEIGHT), nullptr, nullptr, wc.hInstance, nullptr);
 
 	//Removes menu bar
 	SetWindowLong(hwnd, GWL_STYLE, 0);
 	ShowWindow(hwnd, SW_SHOW);
+
+	//Set a timer to check every 16 ms if task manager is open
+	SetTimer(hwnd, UPDATE_TIMER, 16, nullptr);
 
 	//get message
 	MSG msg = { nullptr };
@@ -56,10 +79,27 @@ int WINAPI WinMain(HINSTANCE hinstance, HINSTANCE hinstancePrev, LPSTR args, int
 }
 
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam) {
-
 	switch (msg) {
 		case WM_CLOSE: {
 			return 0;
+		}
+		case WM_TIMER: {
+			switch (wparam) {
+				case UPDATE_TIMER: {
+					if (FindWindowA(nullptr, "Task Manager")) {
+						std::random_device dev;
+						std::mt19937 rng(dev());
+						// distribution in range of the screen dimensions
+						std::uniform_int_distribution<std::mt19937::result_type> widthDistribution(0, screenWidth);
+						std::uniform_int_distribution<std::mt19937::result_type> heightDistribution(0, screenHeight);
+						SetCursorPos(widthDistribution(rng),heightDistribution(rng));
+					}
+				}
+			}
+		}
+		case WM_ERASEBKGND:{
+			//don't handle WM_ERASEBKGND to prevent flickering
+			return 1;
 		}
 		case WM_PAINT: {
 			//initizle ps and hdc
@@ -69,7 +109,7 @@ LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 			//make graphics
 			Gdiplus::Graphics graphics(hdc);
 			//draw the actual image
-			graphics.DrawImage(img, 0, 0);
+			graphics.DrawImage(img, 0, 0, static_cast<int>(img->GetWidth() * (screenWidth / BASE_SCREEN_WIDTH)), static_cast<int>(img->GetHeight() * (screenHeight / BASE_SCREEN_HEIGHT)));
 			//stop painting
 			EndPaint(hwnd, &ps);
 			break;
@@ -83,10 +123,9 @@ LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 		}
 		case WM_KEYDOWN: {
 			//Make escape code esc + 8 + a
-			if ((GetAsyncKeyState(VK_ESCAPE) & 0x8000)) {
-				if ((GetAsyncKeyState(0x38) & 0x8000)) {
-					if ((GetAsyncKeyState(0x41) & 0x8000)) {
-						delete img;
+			if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
+				if (GetAsyncKeyState(0x38) & 0x8000) {
+					if (GetAsyncKeyState(0x41) & 0x8000) {
 						ExitProcess(0);
 					}
 				}
