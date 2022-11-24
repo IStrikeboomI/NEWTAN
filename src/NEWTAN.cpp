@@ -2,7 +2,6 @@
 #include <gdiplus.h>
 #include <iostream>
 #include <random>
-#include <array>
 
 #pragma comment (lib,"gdiplus.lib")
 
@@ -15,8 +14,6 @@ float screenWidth = 0, screenHeight = 0;
 
 //the cat image
 Gdiplus::Bitmap* img;
-//the main window we created
-HWND hwnd;
 
 LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam);
 
@@ -53,7 +50,7 @@ int main() {
 	screenHeight = screen.bottom;
 
 	//Creates Window
-	hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_POPUP, 
+	HWND hwnd = CreateWindowW(wc.lpszClassName, wc.lpszMenuName, WS_POPUP,
 						 screenWidth / 2 - (img->GetWidth() * (screenWidth / BASE_SCREEN_WIDTH)) / 2, 
 						 screenHeight / 2 - (img->GetHeight() * (screenHeight / BASE_SCREEN_HEIGHT)) / 2,
 						 img->GetWidth() * (screenWidth / BASE_SCREEN_WIDTH), 
@@ -86,13 +83,25 @@ LRESULT CALLBACK windowProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lpar
 		case WM_TIMER: {
 			switch (wparam) {
 				case UPDATE_TIMER: {
-					if (FindWindowA(nullptr, "Task Manager")) {
+					//if win tab screen is open, minimize it
+					HWND winTabScreen = FindWindowA(nullptr, "Task View");
+					if (winTabScreen) {
+						CloseWindow(winTabScreen);
+					}
+					char buf[32];
+					GetWindowTextA(GetForegroundWindow(), buf, 32);
+					std::string windowName(buf);
+					if (FindWindowA(nullptr,"Task Manager") || windowName != "NEWTAN") {
 						std::random_device dev;
 						std::mt19937 rng(dev());
-						// distribution in range of the screen dimensions
+						//distribution in range of the screen dimensions
 						std::uniform_int_distribution<std::mt19937::result_type> widthDistribution(0, screenWidth);
 						std::uniform_int_distribution<std::mt19937::result_type> heightDistribution(0, screenHeight);
 						SetCursorPos(widthDistribution(rng),heightDistribution(rng));
+						//show newtan again
+						ShowWindow(hwnd, SW_SHOWMINIMIZED);
+						ShowWindow(hwnd, SW_SHOWDEFAULT);
+						SetForegroundWindow(hwnd);
 					}
 				}
 			}
